@@ -1,0 +1,12 @@
+.Paper[data-correct="true"] {
+  border-color: var(--mantine-color-green-light);
+}
+.Paper[data-correct="false"] {
+  border-color: var(--mantine-color-red-light);
+}
+
+img {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
