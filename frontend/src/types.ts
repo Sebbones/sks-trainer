@@ -8,14 +8,13 @@ export type WithAreas<T> = {
 
 export type Areas = keyof WithAreas<null>;
 
-export interface Question {
-  id: number;
+export interface Task {
   nr: string;
   question: string;
   answer: string;
 }
 
-export interface QuestionState {
-  questionId: number;
+export interface TaskState {
+  questionNr: string;
   streak: number;
 }

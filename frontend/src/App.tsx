@@ -1,5 +1,7 @@
 import {
+  Badge,
   Box,
+  Button,
   Group,
   MantineColor,
   Paper,
@@ -15,34 +17,78 @@ import useSWR from 'swr';
 import './App.css';
 import { AREA_DESIGN, PROGRESS_DESIGN } from './design';
 import { getAreaQuestions } from './settings';
-import { Areas, QuestionState, WithAreas } from './types';
+import { Areas, TaskState, WithAreas } from './types';
 import { fetchJSON } from './utils';
 
 function App() {
-  const { data } = useSWR<Partial<WithAreas<QuestionState[]>>>(
-    '/api/progress',
-    fetchJSON
-  );
+  const { data } = useSWR<{
+    tasks: Partial<WithAreas<TaskState[]>>;
+    testRuns: { passedCount: number; failedCount: number; oralCount: number };
+  }>('/api/progress', fetchJSON);
 
   if (!data) {
     return <p>Loading...</p>;
   }
 
-  console.log('hello :)');
+  const totalTestRuns = Math.max(
+    Object.values(data.testRuns).reduce((total, value) => total + value, 0),
+    1
+  );
+
+  console.log({ totalTestRuns });
 
   return (
     <Group justify="center">
       <Stack gap={30}>
-        {Object.entries(AREA_DESIGN).map(([area, design]) => (
-          <Area
-            key={area}
-            area={area as Areas}
-            title={design.title}
-            color={design.color}
-            icon={design.icon}
-            progress={data[area as Areas] ?? []}
-          />
-        ))}
+        {Object.entries(AREA_DESIGN)
+          .filter(([area]) => area != 'crew_2')
+          .map(([area, design]) => (
+            <Area
+              key={area}
+              area={area as Areas}
+              title={design.title}
+              color={design.color}
+              icon={design.icon}
+              progress={data.tasks[area as Areas] ?? []}
+            />
+          ))}
+        <Group justify="space-between">
+          <Title order={4}>Prüfungsmodus</Title>
+          <Button component={NavLink} to="/testrun">
+            Neue Runde
+          </Button>
+        </Group>
+        <Group justify="space-between">
+          <Stack>
+            <Badge variant="light" color={'green'}>
+              {data.testRuns.passedCount} Bestanden
+            </Badge>
+            <Badge variant="light" color={'orange'}>
+              {data.testRuns.oralCount} mndl. Prüfung
+            </Badge>
+            <Badge variant="light" color={'red'}>
+              {data.testRuns.failedCount} Nicht Bestanden
+            </Badge>
+          </Stack>
+          <RingProgress
+            size={80}
+            thickness={4}
+            sections={[
+              {
+                value: (data.testRuns.passedCount / totalTestRuns) * 100,
+                color: 'green'
+              },
+              {
+                value: (data.testRuns.oralCount / totalTestRuns) * 100,
+                color: 'orange'
+              },
+              {
+                value: (data.testRuns.failedCount / totalTestRuns) * 100,
+                color: 'red'
+              }
+            ]}
+          ></RingProgress>
+        </Group>
       </Stack>
     </Group>
   );
@@ -59,11 +105,11 @@ function Area({
   icon: ReactNode;
   title: ReactNode;
   color: MantineColor;
-  progress: QuestionState[];
+  progress: TaskState[];
 }) {
   const totalAreaQuestions = getAreaQuestions(area).length;
 
-  function getStreakProgress(thresholdFn: (s: QuestionState) => boolean) {
+  function getStreakProgress(thresholdFn: (s: TaskState) => boolean) {
     return progress.reduce((total, state) => {
       if (thresholdFn(state)) return total + 1;
       return total;

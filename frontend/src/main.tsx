@@ -6,6 +6,7 @@ import { HashRouter, Route, Routes } from 'react-router';
 import App from './App.tsx';
 import AreaPage from './AreaPage.tsx';
 import './index.css';
+import { TestRun } from './TestRun.tsx';
 
 class ErrorBoundary extends Component<
   { children: ReactNode },
@@ -48,6 +49,7 @@ createRoot(document.getElementById('root')!).render(
               <Routes>
                 <Route path="/" element={<App />} />
                 <Route path="/:area" element={<AreaPage />}></Route>
+                <Route path="/testrun" element={<TestRun />}></Route>
               </Routes>
             </HashRouter>
           </ErrorBoundary>

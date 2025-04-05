@@ -1,59 +1,15 @@
-import { faArrowLeft } from '@fortawesome/pro-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  Anchor,
-  Badge,
-  Button,
-  Collapse,
-  Group,
-  Paper,
-  Progress,
-  Stack,
-  Text,
-  ThemeIcon
-} from '@mantine/core';
+import { Anchor, Badge, Button, Group, Stack } from '@mantine/core';
 import { ReactNode, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
-import classes from './AreaPage.module.css';
 import { AREA_DESIGN, PROGRESS_DESIGN } from './design';
 import { getAreaQuestions } from './settings';
-import { Areas, Question, QuestionState } from './types';
+import { TasksPane } from './TaskPane';
+import { Areas, Task, TaskState } from './types';
 import { fetchApi, fetchJSON, toShuffled } from './utils';
 
-interface SessionQuestion extends Question {
-  streak: QuestionState['streak'];
+interface SessionQuestion extends Task {
+  streak: TaskState['streak'];
   correct: boolean | null;
-}
-
-function formatText(text: string) {
-  const lines = text.split('\n');
-  let html = '';
-
-  function writeList(list: string[]) {
-    html += `<ul style="list-style:decimal">${list.map((x) => `<li>${x.trim()}</li>`).join('')}</ul>`;
-  }
-
-  let currentList: string[] | null = null;
-  for (const line of lines) {
-    if (/^\s*\d\./.test(line)) {
-      if (currentList === null) {
-        currentList = [];
-      }
-      currentList.push(line.replace(/^\s*\d\./, ''));
-    } else {
-      if (currentList) {
-        writeList(currentList);
-        currentList = null;
-      }
-      html += line.trim();
-    }
-  }
-
-  if (currentList) {
-    writeList(currentList);
-  }
-
-  return html;
 }
 
 function AreaPage() {
@@ -61,20 +17,20 @@ function AreaPage() {
   const [sessionQuestions, setSessionQuestions] = useState<SessionQuestion[]>(
     []
   );
-  const [currentQuestionId, setCurrentQuestionId] = useState<number>(-1);
+  const [currentQuestionNr, setCurrentQuestionNr] = useState<string>('');
   const [showAnswer, setShowAnswer] = useState(false);
 
   useEffect(() => {
     setSessionQuestions([]);
-    setCurrentQuestionId(-1);
+    setCurrentQuestionNr('');
     setShowAnswer(false);
 
     const areaQuestions: SessionQuestion[] = getAreaQuestions(area).map(
       (q) => ({ ...q, streak: 0, correct: null })
     );
-    fetchJSON<QuestionState[]>(`/api/progress/${area}`).then((progress) => {
+    fetchJSON<TaskState[]>(`/api/progress/${area}`).then((progress) => {
       for (const state of progress) {
-        const question = areaQuestions.find((q) => q.id === state.questionId);
+        const question = areaQuestions.find((q) => q.nr === state.questionNr);
         if (question) {
           question.streak = state.streak;
         }
@@ -85,15 +41,21 @@ function AreaPage() {
       );
 
       setSessionQuestions(questions);
-      setCurrentQuestionId(questions[0].id);
+      setCurrentQuestionNr(questions[0].nr);
     });
   }, [area]);
 
-  async function updateQuestion(question: SessionQuestion, correct: boolean) {
+  async function updateQuestion(
+    question: SessionQuestion,
+    correct: boolean,
+    questionArea: string
+  ) {
     const form = new FormData();
     const newStreak = correct ? question.streak + 1 : 0;
     form.set('state', '' + newStreak);
-    const response = await fetchApi(`/api/question/${question.id}`, {
+    form.set('nr', '' + question.nr);
+    form.set('area', '' + questionArea);
+    const response = await fetchApi(`/api/question`, {
       method: 'PUT',
       body: form
     });
@@ -125,11 +87,11 @@ function AreaPage() {
     if (nextQuestion.correct != null) {
       setShowAnswer(true);
     }
-    setCurrentQuestionId(nextQuestion.id);
+    setCurrentQuestionNr(nextQuestion.nr);
   }
 
   const currentQuestionIndex = sessionQuestions.findIndex(
-    (q) => q.id === currentQuestionId
+    (q) => q.nr === currentQuestionNr
   );
   const currentQuestion = sessionQuestions[currentQuestionIndex];
 
@@ -144,7 +106,7 @@ function AreaPage() {
           variant="light"
           color="red"
           onClick={() => {
-            updateQuestion(currentQuestion, false);
+            updateQuestion(currentQuestion, false, area);
           }}
         >
           Falsch
@@ -154,7 +116,7 @@ function AreaPage() {
           variant="light"
           color="green"
           onClick={() => {
-            updateQuestion(currentQuestion, true);
+            updateQuestion(currentQuestion, true, area);
           }}
         >
           Richtig
@@ -183,71 +145,28 @@ function AreaPage() {
       <Group>
         <Anchor href="/">Zur Auswahl</Anchor>
       </Group>
-      <Paper
-        className={classes.Page}
-        withBorder
-        p={'md'}
-        data-correct={
-          currentQuestion.correct === null ? 'none' : currentQuestion.correct
+      <TasksPane
+        task={currentQuestion}
+        progress={(currentQuestionIndex + 1) / sessionQuestions.length}
+        hasGoBack={currentQuestionIndex !== 0}
+        onGoBack={() => {
+          move(-1);
+        }}
+        areaTitle={AREA_DESIGN[area].title}
+        streakBadge={
+          <Badge
+            color={PROGRESS_DESIGN.getStateColor(currentQuestion.streak)}
+            variant="light"
+          >
+            {PROGRESS_DESIGN.getStateText(currentQuestion.streak)}
+          </Badge>
         }
-      >
-        <Stack gap={'sm'}>
-          <Progress
-            size={'sm'}
-            value={((currentQuestionIndex + 1) / sessionQuestions.length) * 100}
-          />
-          <Group flex={1}>
-            {currentQuestionIndex !== 0 && (
-              <Anchor
-                component={'button'}
-                onClick={() => {
-                  move(-1);
-                }}
-              >
-                <Group gap={3}>
-                  <ThemeIcon size={'sm'} color="gray" variant="transparent">
-                    <FontAwesomeIcon icon={faArrowLeft} />
-                  </ThemeIcon>
-                  <Text component="span">Zurück</Text>
-                </Group>
-              </Anchor>
-            )}
-          </Group>
-          <Stack align="center" gap={0} mb={'md'}>
-            <h3>
-              {AREA_DESIGN[area].title} - {currentQuestion.nr}
-            </h3>
-            <Badge
-              color={PROGRESS_DESIGN.getStateColor(currentQuestion.streak)}
-              variant="light"
-            >
-              {PROGRESS_DESIGN.getStateText(currentQuestion.streak)}
-            </Badge>
-          </Stack>
-          <p
-            style={{ whiteSpace: 'pre-wrap', textAlign: 'left' }}
-            dangerouslySetInnerHTML={{
-              __html: formatText(currentQuestion.question)
-            }}
-          />
-          <Group justify="flex-end">
-            <Button variant="subtle" onClick={() => setShowAnswer(!showAnswer)}>
-              <Text>Antwort</Text>
-            </Button>
-          </Group>
-          <Collapse in={showAnswer} transitionDuration={0}>
-            <Stack>
-              <p
-                style={{ whiteSpace: 'pre-wrap', textAlign: 'left' }}
-                dangerouslySetInnerHTML={{
-                  __html: formatText(currentQuestion.answer)
-                }}
-              />
-              <Group justify="flex-end">{actions}</Group>
-            </Stack>
-          </Collapse>
-        </Stack>
-      </Paper>
+        showAnswer={showAnswer}
+        onToggleShowAnswer={() => {
+          setShowAnswer(!showAnswer);
+        }}
+        actions={actions}
+      />
     </Stack>
   );
 }
