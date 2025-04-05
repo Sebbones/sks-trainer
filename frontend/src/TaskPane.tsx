@@ -63,12 +63,7 @@ export function TasksPane({
           </h3>
           {streakBadge}
         </Stack>
-        <p
-          style={{ whiteSpace: 'pre-wrap', textAlign: 'left' }}
-          dangerouslySetInnerHTML={{
-            __html: task.question
-          }}
-        />
+        <div style={{'textAlign': 'left'}} dangerouslySetInnerHTML={{ __html: task.question }} />
         <Group justify="flex-end">
           <Button variant="subtle" onClick={onToggleShowAnswer}>
             <Text>Antwort</Text>
@@ -76,12 +71,7 @@ export function TasksPane({
         </Group>
         <Collapse in={showAnswer} transitionDuration={0}>
           <Stack>
-            <p
-              style={{ whiteSpace: 'pre-wrap', textAlign: 'left' }}
-              dangerouslySetInnerHTML={{
-                __html: task.answer
-              }}
-            />
+            <div style={{'textAlign': 'left'}} dangerouslySetInnerHTML={{ __html: task.answer }} />
             <Group justify="flex-end">{actions}</Group>
           </Stack>
         </Collapse>

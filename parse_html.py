@@ -61,6 +61,25 @@ def parse_page(doc: BeautifulSoup):
       active_section = "nr"
       continue
 
+    # decompose br
+    if name == "ol":
+      for li in node.children:
+        if isinstance(li, str):
+          continue
+        stacked_br = []
+        for el in li.children:
+          if isinstance(el, str):
+            if el != "\n":
+              if len(stacked_br) > 1:
+                for br in stacked_br:
+                  br.decompose()
+              stacked_br = []
+          elif el.name == "br":
+            stacked_br.append(el)
+        if len(stacked_br) > 1:
+          for br in stacked_br:
+            br.decompose()
+
     if active_section == "nr":
       current_chunk_nr = node.get_text()
       active_section = "question"

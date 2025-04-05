@@ -75,7 +75,7 @@ export function TestRun() {
     setTasks(newTasks);
 
     // reset global task streak
-    if (choice === 'false' || choice === 'full') {
+    if (choice === 'false' || choice === 'half') {
       const form = new FormData();
       form.set('state', '' + 0);
       form.set('nr', task.nr);

@@ -54,41 +54,21 @@ function App() {
           ))}
         <Group justify="space-between">
           <Title order={4}>Prüfungsmodus</Title>
-          <Button component={NavLink} to="/testrun">
+          <Button variant="light" component={NavLink} to="/testrun">
             Neue Runde
           </Button>
         </Group>
-        <Group justify="space-between">
-          <Stack>
-            <Badge variant="light" color={'green'}>
-              {data.testRuns.passedCount} Bestanden
-            </Badge>
-            <Badge variant="light" color={'orange'}>
-              {data.testRuns.oralCount} mndl. Prüfung
-            </Badge>
-            <Badge variant="light" color={'red'}>
-              {data.testRuns.failedCount} Nicht Bestanden
-            </Badge>
-          </Stack>
-          <RingProgress
-            size={80}
-            thickness={4}
-            sections={[
-              {
-                value: (data.testRuns.passedCount / totalTestRuns) * 100,
-                color: 'green'
-              },
-              {
-                value: (data.testRuns.oralCount / totalTestRuns) * 100,
-                color: 'orange'
-              },
-              {
-                value: (data.testRuns.failedCount / totalTestRuns) * 100,
-                color: 'red'
-              }
-            ]}
-          ></RingProgress>
-        </Group>
+        <Stack>
+          <Badge variant="light" color={'green'}>
+            {data.testRuns.passedCount} Bestanden
+          </Badge>
+          <Badge variant="light" color={'orange'}>
+            {data.testRuns.oralCount} mndl. Prüfung
+          </Badge>
+          <Badge variant="light" color={'red'}>
+            {data.testRuns.failedCount} Nicht Bestanden
+          </Badge>
+        </Stack>
       </Stack>
     </Group>
   );
